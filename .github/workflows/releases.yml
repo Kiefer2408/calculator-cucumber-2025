@@ -53,17 +53,19 @@ jobs:
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
             echo "No previous tag found. Using all commits."
-            git log --pretty=format:"- %s (%an)" > changelog.md
+            git log --pretty=format:"- %s" > changelog.md
           else
             echo "Generating changelog since tag: $LAST_TAG"
-            git log "$LAST_TAG"..HEAD --pretty=format:"- %s (%an)" > changelog.md
+            git log "$LAST_TAG"..HEAD --pretty=format:"- %s" > changelog.md
           fi
 
           echo "------ changelog.md content ------"
           cat changelog.md
           
-          CHANGELOG=$(cat changelog.md | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
+          # Nettoyage du contenu pour GitHub output (encode bien tout)
+          CHANGELOG=$(cat changelog.md | sed 's/%/%25/g' | sed 's/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')
           echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
