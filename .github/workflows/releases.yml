@@ -41,8 +41,6 @@ jobs:
           git tag v$NEW_VERSION
           git push origin main --tags
 
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-
           
       - name: Build package
         run: mvn clean package
