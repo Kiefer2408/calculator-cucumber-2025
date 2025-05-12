@@ -1,4 +1,4 @@
-name: Release Maven Project
+name: Release Project
 
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
           mvn versions:commit
 
           git add pom.xml
-          git commit -m "chore: bump version to $NEW_VERSION"
+          git commit -m "bump version to $NEW_VERSION"
           git tag v$NEW_VERSION
           git push origin main --tags
 
@@ -51,10 +51,10 @@ jobs:
         run: |
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
-            echo "🚀 Première release générée automatiquement." > changelog.md
+            echo "🚀 First Release" > changelog.md
             git log --pretty=format:"- %s" >> changelog.md
           else
-            echo "🚀 Nouvelle release depuis $LAST_TAG :" > changelog.md
+            echo "🚀 New Release since $LAST_TAG :" > changelog.md
             git log "$LAST_TAG"..HEAD --pretty=format:"- %s" >> changelog.md
           fi
 
