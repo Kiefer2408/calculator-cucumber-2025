@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write # pour push une release sur GitHub
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -27,10 +27,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "Current version: $CURRENT_VERSION"
-          
-          # Incrémente la version patch genre 1.0.0 -> 1.0.1
+
           NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF += 1; print}')
           echo "New version: $NEW_VERSION"
 
@@ -43,35 +43,10 @@ jobs:
           git push origin main --tags
 
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          
+
       - name: Build package
         run: mvn clean package
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.set_version.outputs.new_version }}
-          name: Release v${{ steps.set_version.outputs.new_version }}
-
-          body: |
-            🚀 New Release
-            
-            ## Changelog
-            ${{ steps.changelog.outputs.changelog }}
-
-
-        env:
-          GITHUB_TOKEN: ${{ secrets.TESTKEY }}
-
-      - name: Upload release asset (jar)
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.set_version.outputs.new_version }}
-          name: Release v${{ steps.set_version.outputs.new_version }}
-          files: target/*.jar
-        env:
-          GITHUB_TOKEN: ${{ secrets.TESTKEY }}
-          
       - name: Generate changelog
         id: changelog
         run: |
@@ -81,11 +56,32 @@ jobs:
             git log --pretty=format:"- %s (%an)" > changelog.md
           else
             echo "Generating changelog since tag: $LAST_TAG"
-            git log $LAST_TAG..HEAD --pretty=format:"- %s (%an)" > changelog.md
+            git log "$LAST_TAG"..HEAD --pretty=format:"- %s (%an)" > changelog.md
           fi
 
-          # Encode safely for GitHub output
-          CHANGELOG_CONTENT=$(cat changelog.md | sed 's/%/%25/g' | sed 's/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')
-          echo "changelog=$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+          echo "------ changelog.md content ------"
+          cat changelog.md
+          
+          CHANGELOG=$(cat changelog.md | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
+          echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.set_version.outputs.new_version }}
+          name: Release v${{ steps.set_version.outputs.new_version }}
+          body: |
+            🚀 Nouvelle version release automatique.
 
+            ## Changelog
+            ${{ steps.changelog.outputs.changelog }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.TESTKEY }}
+
+      - name: Upload release asset (jar)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.set_version.outputs.new_version }}
+          files: target/*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.TESTKEY }}
