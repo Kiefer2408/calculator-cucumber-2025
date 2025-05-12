@@ -23,6 +23,7 @@ jobs:
           java-version: '23'
 
       - name: Set version automatically
+        id: set_version
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -66,7 +67,4 @@ jobs:
           files: target/*.jar
         env:
           GITHUB_TOKEN: ${{ secrets.TESTKEY }}
-
-      - name: Show new version
-        run: echo "Version:${{ steps.set_version.outputs.new_version }}"
 
