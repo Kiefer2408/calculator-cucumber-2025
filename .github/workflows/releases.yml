@@ -71,6 +71,7 @@ jobs:
           files: target/*.jar
         env:
           GITHUB_TOKEN: ${{ secrets.TESTKEY }}
+          
       - name: Generate changelog
         id: changelog
         run: |
@@ -83,11 +84,8 @@ jobs:
             git log $LAST_TAG..HEAD --pretty=format:"- %s (%an)" > changelog.md
           fi
 
-          changelog_output=$(cat changelog.md)
-          changelog_output="${changelog_output//'%'/'%25'}"
-          changelog_output="${changelog_output//$'\n'/'%0A'}"
-          changelog_output="${changelog_output//$'\r'/'%0D'}"
-      
-          echo "changelog=$changelog_output" >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          # Encode safely for GitHub output
+          CHANGELOG_CONTENT=$(cat changelog.md | sed 's/%/%25/g' | sed 's/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+          echo "changelog=$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+
 
